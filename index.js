@@ -1,8 +1,15 @@
 // Load environment variables
 // require('dotenv').config();
+import express from "express";
+import OpenAI from "openai";
+import dotenv from 'dotenv';
+dotenv.config();
 
-const express = require('express');
 const app = express();
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Middleware to parse JSON in request bodies
 app.use(express.json());
@@ -10,29 +17,35 @@ app.use(express.json());
 // ROUTES
 app.get('/', (req, res) => {
     res.send('Server is running');
-});
+})
 
+app.get('/openai', async (req, res) => {
 
-app.get('/hola', (req, res) => {
+    const prompt = req.query.prompt || "Only answer me 'No prompt was sent'";
 
+    try {
+        const response = await client.responses.create({
+            model: "gpt-4.1",
+            input: prompt
+        });
 
-    const edu = {
-        name: 'Eduardo',
-        age: 30,
-        city: 'Madrid'
+        res.status(200).json({
+            name: 'Eduardo',
+            prompt,
+            response
+        });
+    } catch (error) {
+        console.error('OpenAI error:', error);
+        res.status(500).json({ error: 'Failed to fetch response from OpenAI.' });
     }
 
-    res.status(200).json(edu);
 });
-
-
-
 
 
 
 
 // Define the port from .env or fallback
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Start the server
 app.listen(PORT, () => {
